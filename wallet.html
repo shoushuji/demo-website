@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wallet Transactions</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #2c3e50, #3498db);
+            color: #2c3e50;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            width: 100%;
+            max-width: 900px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            position: relative;
+        }
+        .lang-select {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            padding: 3px 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            color: #2c3e50;
+            font-size: 12px;
+            cursor: pointer;
+            transition: background 0.3s, border-color 0.3s, box-shadow 0.3s;
+        }
+        .lang-select:hover {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: #3498db;
+            box-shadow: 0 0 8px rgba(52, 152, 219, 0.5);
+        }
+        h2, h3 {
+            font-size: 32px;
+            color: #2c3e50;
+            font-weight: 700;
+            margin-bottom: 20px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        h3 {
+            font-size: 24px;
+        }
+        .transaction-list, .daily-stats {
+            margin-bottom: 40px;
+            text-align: left;
+        }
+        .transaction, .stat {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            background: #fff;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        .transaction-info, .stat-info {
+            flex: 1;
+        }
+        .transaction-info p, .stat-info p {
+            margin: 5px 0;
+            font-size: 16px;
+            color: #2c3e50;
+        }
+        .amount-editable, .currency-editable, .time-editable {
+            cursor: pointer;
+            color: #3498db;
+            text-decoration: none;
+        }
+        .amount-input, .time-input {
+            padding: 8px;
+            border: 1px solid #ecf0f1;
+            border-radius: 8px;
+            font-size: 14px;
+            width: 100px;
+        }
+        .currency-select {
+            padding: 8px;
+            border: 1px solid #ecf0f1;
+            border-radius: 8px;
+            font-size: 14px;
+            width: 100px;
+        }
+        .amount-input.invalid, .time-input.invalid {
+            border: 1px solid #e74c3c;
+            background: rgba(231, 76, 60, 0.1);
+            animation: shake 0.3s;
+        }
+        .status-completed {
+            display: inline-block;
+            padding: 5px 10px;
+            background: linear-gradient(90deg, #27ae60, #2ecc71);
+            color: white;
+            border-radius: 5px;
+            font-size: 14px;
+            margin-left: 10px;
+        }
+        .status-failed {
+            display: inline-block;
+            padding: 5px 10px;
+            background: linear-gradient(90deg, #e74c3c, #c0392b);
+            color: white;
+            border-radius: 5px;
+            font-size: 14px;
+            margin-left: 10px;
+        }
+        .delete-btn, .generate-btn, .generate-ten-btn, .generate-thirty-btn, .export-btn, .import-btn {
+            padding: 8px 16px;
+            background: linear-gradient(90deg, #e74c3c, #c0392b);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-size: 14px;
+            cursor: pointer;
+            box-shadow: 0 3px 10px rgba(231, 76, 60, 0.3);
+            transition: background 0.3s;
+            margin: 5px;
+        }
+        .generate-btn, .generate-ten-btn, .generate-thirty-btn, .export-btn, .import-btn {
+            background: linear-gradient(90deg, #27ae60, #2ecc71);
+            box-shadow: 0 3px 10px rgba(39, 174, 96, 0.3);
+        }
+        .delete-btn:hover {
+            background: linear-gradient(90deg, #c0392b, #e74c3c);
+        }
+        .generate-btn:hover, .generate-ten-btn:hover, .generate-thirty-btn:hover, .export-btn:hover, .import-btn:hover {
+            background: linear-gradient(90deg, #2ecc71, #27ae60);
+        }
+        .form-group {
+            margin-bottom: 15px;
+            display: inline-block;
+            width: 23%;
+            margin-right: 2%;
+        }
+        .form-group:last-child {
+            margin-right: 0;
+        }
+        label {
+            display: block;
+            margin-bottom: 4px;
+            font-size: 12px;
+            color: #2c3e50;
+        }
+        input[type="text"], input[type="number"], select, input[type="file"] {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ecf0f1;
+            border-radius: 8px;
+            background: #fff;
+            color: #2c3e50;
+            font-size: 14px;
+            box-sizing: border-box;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+        input[type="text"]:focus, input[type="number"]:focus, select:focus, input[type="file"]:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 8px rgba(52, 152, 219, 0.5);
+        }
+        input[type="text"].invalid, input[type="number"].invalid {
+            border: 1px solid #e74c3c;
+            background: rgba(231, 76, 60, 0.1);
+            animation: shake 0.3s;
+        }
+        .error-msg {
+            font-size: 10px;
+            color: #e74c3c;
+            display: none;
+            margin-top: 4px;
+        }
+        .error-msg::before {
+            content: "⚠ ";
+            margin-right: 4px;
+        }
+        button.add-btn {
+            width: 100%;
+            padding: 10px;
+            background: linear-gradient(90deg, #27ae60, #2ecc71);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(39, 174, 96, 0.3);
+            position: relative;
+            overflow: hidden;
+            transition: background 0.3s;
+            margin-top: 10px;
+        }
+        button.add-btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+        button.add-btn:hover::before {
+            width: 200px;
+            height: 200px;
+        }
+        button.add-btn:hover {
+            background: linear-gradient(90deg, #2ecc71, #27ae60);
+        }
+        .form-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+        }
+        .button-group {
+            margin-top: 20px;
+            text-align: center;
+        }
+        .save-message {
+            font-size: 12px;
+            color: #27ae60;
+            margin-top: 10px;
+            display: none;
+        }
+        @keyframes shake {
+            0% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            50% { transform: translateX(5px); }
+            75% { transform: translateX(-5px); }
+            100% { transform: translateX(0); }
+        }
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+                margin: 10px;
+                width: 90%;
+            }
+            h2 {
+                font-size: 28px;
+            }
+            h3 {
+                font-size: 20px;
+            }
+            .lang-select {
+                padding: 2px 4px;
+                font-size: 10px;
+            }
+            .transaction, .stat {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .status-completed, .status-failed, .delete-btn, .generate-btn, .generate-ten-btn, .generate-thirty-btn, .export-btn, .import-btn {
+                margin-top: 10px;
+            }
+            .form-group {
+                width: 100%;
+                margin-right: 0;
+            }
+            input[type="text"], input[type="number"], select, input[type="file"] {
+                font-size: 12px;
+                padding: 6px;
+            }
+            button.add-btn, .generate-btn, .generate-ten-btn, .generate-thirty-btn, .export-btn, .import-btn {
+                font-size: 14px;
+                padding: 8px;
+            }
+            .amount-input, .time-input, .currency-select {
+                width: 100%;
+                font-size: 12px;
+                padding: 6px;
+            }
+            .save-message {
+                font-size: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <select class="lang-select" id="lang-select">
+            <option value="en">English</option>
+            <option value="zh">中文</option>
+        </select>
+        <h2 id="title">Wallet Transactions</h2>
+        <div class="transaction-list" id="transaction-list"></div>
+        <h3 id="stats-title">Daily Transaction Statistics</h3>
+        <div class="daily-stats" id="daily-stats"></div>
+        <h3 id="form-title">Add Custom Transaction</h3>
+        <form id="add-transaction-form">
+            <div class="form-container">
+                <div class="form-group">
+                    <label for="custom-amount" id="label-amount">Amount</label>
+                    <input type="number" id="custom-amount" min="80" max="780" step="1" required>
+                    <span class="error-msg" id="custom-amount-error"></span>
+                </div>
+                <div class="form-group">
+                    <label for="custom-currency" id="label-currency">Currency</label>
+                    <select id="custom-currency" required>
+                        <option value="USD">USD</option>
+                        <option value="JPY">JPY</option>
+                        <option value="EUR">EUR</option>
+                        <option value="KRW">KRW</option>
+                        <option value="AUD">AUD</option>
+                        <option value="SGD">SGD</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="custom-time" id="label-time">Transaction Time</label>
+                    <input type="text" id="custom-time" placeholder="YYYY-MM-DD HH:MM:SS" required>
+                    <span class="error-msg" id="custom-time-error"></span>
+                </div>
+                <div class="form-group">
+                    <label for="custom-status" id="label-status">Status</label>
+                    <select id="custom-status" required>
+                        <option value="Completed">Completed</option>
+                        <option value="Failed">Failed</option>
+                    </select>
+                </div>
+            </div>
+            <button type="submit" class="add-btn" id="add-btn">Add Transaction</button>
+        </form>
+        <div class="button-group">
+            <button class="generate-btn" id="generate-btn">Generate Custom Transaction</button>
+            <button class="generate-ten-btn" id="generate-ten-btn">Generate 10 Transactions</button>
+            <button class="generate-thirty-btn" id="generate-thirty-btn">Generate 30 Transactions</button>
+            <button class="export-btn" id="export-btn">Export Transactions</button>
+            <input type="file" id="import-file" accept=".json" style="display: none;">
+            <button class="import-btn" id="import-btn">Import Transactions</button>
+        </div>
+        <div class="save-message" id="save-message"></div>
+    </div>
+
+    <script>
+        let lang = localStorage.getItem('lang') || 'en';
+        const translations = {
+            en: {
+                title: 'Wallet Transactions',
+                statsTitle: 'Daily Transaction Statistics',
+                formTitle: 'Add Custom Transaction',
+                order: 'Order Number',
+                amount: 'Amount',
+                currency: 'Currency',
+                time: 'Transaction Time',
+                status: 'Status',
+                addBtn: 'Add Transaction',
+                deleteBtn: 'Delete',
+                generateBtn: 'Generate Custom Transaction',
+                generateTenBtn: 'Generate 10 Transactions',
+                generateThirtyBtn: 'Generate 30 Transactions',
+                exportBtn: 'Export Transactions',
+                importBtn: 'Import Transactions',
+                saveMessage: 'Data saved successfully!',
+                importError: 'Invalid file format or data!',
+                date: 'Date',
+                totalAmount: 'Total Amount',
+                errors: {
+                    amount: 'Amount must be an integer between 80 and 780!',
+                    time: 'Transaction time must be in YYYY-MM-DD HH:MM:SS format!'
+                }
+            },
+            zh: {
+                title: '钱包交易记录',
+                statsTitle: '每日交易统计',
+                formTitle: '添加自定义交易',
+                order: '订单号',
+                amount: '金额',
+                currency: '货币',
+                time: '交易时间',
+                status: '状态',
+                addBtn: '添加交易',
+                deleteBtn: '删除',
+                generateBtn: '生成自定义交易',
+                generateTenBtn: '随机生成10条交易',
+                generateThirtyBtn: '随机生成30条交易',
+                exportBtn: '导出交易记录',
+                importBtn: '导入交易记录',
+                saveMessage: '数据保存成功！',
+                importError: '文件格式或数据无效！',
+                date: '日期',
+                totalAmount: '总金额',
+                errors: {
+                    amount: '金额必须为80到780之间的整数！',
+                    time: '交易时间必须为 YYYY-MM-DD HH:MM:SS 格式！'
+                }
+            }
+        };
+
+        // Initialize language
+        document.getElementById('lang-select').value = lang;
+        updateTranslations();
+
+        // Language switch
+        document.getElementById('lang-select').addEventListener('change', (e) => {
+            lang = e.target.value;
+            localStorage.setItem('lang', lang);
+            updateTranslations();
+            displayTransactions();
+            displayDailyStats();
+        });
+
+        function updateTranslations() {
+            const t = translations[lang];
+            document.getElementById('title').textContent = t.title;
+            document.getElementById('stats-title').textContent = t.statsTitle;
+            document.getElementById('form-title').textContent = t.formTitle;
+            document.getElementById('label-amount').textContent = t.amount;
+            document.getElementById('label-currency').textContent = t.currency;
+            document.getElementById('label-time').textContent = t.time;
+            document.getElementById('label-status').textContent = t.status;
+            document.getElementById('add-btn').textContent = t.addBtn;
+            document.getElementById('generate-btn').textContent = t.generateBtn;
+            document.getElementById('generate-ten-btn').textContent = t.generateTenBtn;
+            document.getElementById('generate-thirty-btn').textContent = t.generateThirtyBtn;
+            document.getElementById('export-btn').textContent = t.exportBtn;
+            document.getElementById('import-btn').textContent = t.importBtn;
+        }
+
+        function showSaveMessage() {
+            const saveMessage = document.getElementById('save-message');
+            saveMessage.textContent = translations[lang].saveMessage;
+            saveMessage.style.display = 'block';
+            setTimeout(() => {
+                saveMessage.style.display = 'none';
+            }, 2000);
+        }
+
+        function formatDateTime(date) {
+            return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}:${String(date.getSeconds()).padStart(2, '0')}`;
+        }
+
+        function generateOrderNumber() {
+            const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+            let randomLetters = '';
+            for (let j = 0; j < 4; j++) {
+                randomLetters += letters.charAt(Math.floor(Math.random() * letters.length));
+            }
+            const date = new Date();
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const randomDigits = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+            return `${randomLetters}${year}${month}${day}${randomDigits}`;
+        }
+
+        function generateRandomTransaction(baseTime, index) {
+            const amount = Math.floor(Math.random() * (780 - 80 + 1)) + 80;
+            const currency = 'USD'; // Fixed to USD
+            const status = Math.random() < 0.03 ? 'Failed' : 'Completed'; // 3% failure rate
+            const timeOffset = index * (Math.floor(Math.random() * (90 - 37 + 1)) + 37) * 1000;
+            const transactionTime = new Date(baseTime.getTime() + timeOffset);
+            console.log('Generating transaction:', { amount, currency, status, operationTime: formatDateTime(transactionTime) }); // Debug log
+            return {
+                orderNumber: generateOrderNumber(),
+                amount: amount,
+                currency: currency,
+                operationTime: formatDateTime(transactionTime),
+                status: status
+            };
+        }
+
+        function displayTransactions() {
+            const transactionList = document.getElementById('transaction-list');
+            const transactions = JSON.parse(localStorage.getItem('transactions')) || [];
+            console.log('Displaying transactions:', transactions); // Debug log
+            transactionList.innerHTML = '';
+
+            transactions.forEach((transaction, index) => {
+                const transactionDiv = document.createElement('div');
+                transactionDiv.className = 'transaction';
+                transactionDiv.innerHTML = `
+                    <div class="transaction-info">
+                        <p>${translations[lang].order}: ${transaction.orderNumber}</p>
+                        <p class="amount-editable" data-index="${index}">${translations[lang].amount}: ${transaction.amount}</p>
+                        <p class="currency-editable" data-index="${index}">${translations[lang].currency}: ${transaction.currency}</p>
+                        <p class="time-editable" data-index="${index}">${translations[lang].time}: ${transaction.operationTime}</p>
+                    </div>
+                    <span class="status-${transaction.status.toLowerCase()}">${transaction.status}</span>
+                    <button class="delete-btn">${translations[lang].deleteBtn}</button>
+                `;
+                // Amount editing
+                const amountElement = transactionDiv.querySelector('.amount-editable');
+                amountElement.addEventListener('click', () => {
+                    const input = document.createElement('input');
+                    input.type = 'number';
+                    input.className = 'amount-input';
+                    input.value = transaction.amount;
+                    input.min = 80;
+                    input.max = 780;
+                    input.step = 1;
+                    amountElement.replaceWith(input);
+                    input.focus();
+                    input.addEventListener('blur', () => saveAmountEdit(input, index, transaction.amount));
+                    input.addEventListener('keypress', (e) => {
+                        if (e.key === 'Enter') saveAmountEdit(input, index, transaction.amount);
+                    });
+                });
+                // Currency editing
+                const currencyElement = transactionDiv.querySelector('.currency-editable');
+                currencyElement.addEventListener('click', () => {
+                    const select = document.createElement('select');
+                    select.className = 'currency-select';
+                    const currencies = ['USD', 'JPY', 'EUR', 'KRW', 'AUD', 'SGD'];
+                    select.innerHTML = currencies.map(c => `<option value="${c}" ${c === transaction.currency ? 'selected' : ''}>${c}</option>`).join('');
+                    currencyElement.replaceWith(select);
+                    select.focus();
+                    select.addEventListener('change', () => saveCurrencyEdit(select, index));
+                    select.addEventListener('blur', () => saveCurrencyEdit(select, index));
+                });
+                // Time editing
+                const timeElement = transactionDiv.querySelector('.time-editable');
+                timeElement.addEventListener('click', () => {
+                    const input = document.createElement('input');
+                    input.type = 'text';
+                    input.className = 'time-input';
+                    input.value = transaction.operationTime;
+                    timeElement.replaceWith(input);
+                    input.focus();
+                    input.addEventListener('blur', () => saveTimeEdit(input, index, transaction.operationTime));
+                    input.addEventListener('keypress', (e) => {
+                        if (e.key === 'Enter') saveTimeEdit(input, index, transaction.operationTime);
+                    });
+                });
+                // Delete button
+                transactionDiv.querySelector('.delete-btn').onclick = () => {
+                    deleteTransaction(index);
+                    displayDailyStats();
+                    showSaveMessage();
+                };
+                transactionList.appendChild(transactionDiv);
+            });
+        }
+
+        function saveAmountEdit(input, index, originalAmount) {
+            const newAmount = parseInt(input.value);
+            if (newAmount >= 80 && newAmount <= 780 && Number.isInteger(newAmount)) {
+                let transactions = JSON.parse(localStorage.getItem('transactions')) || [];
+                transactions[index].amount = newAmount;
+                localStorage.setItem('transactions', JSON.stringify(transactions));
+                displayTransactions();
+                displayDailyStats();
+                showSaveMessage();
+            } else {
+                input.classList.add('invalid');
+                setTimeout(() => {
+                    input.replaceWith(document.createElement('p'));
+                    displayTransactions();
+                }, 500);
+            }
+        }
+
+        function saveCurrencyEdit(select, index) {
+            const newCurrency = select.value;
+            let transactions = JSON.parse(localStorage.getItem('transactions')) || [];
+            transactions[index].currency = newCurrency;
+            localStorage.setItem('transactions', JSON.stringify(transactions));
+            displayTransactions();
+            displayDailyStats();
+            showSaveMessage();
+        }
+
+        function saveTimeEdit(input, index, originalTime) {
+            const newTime = input.value;
+            const timeRegex = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/;
+            if (timeRegex.test(newTime)) {
+                let transactions = JSON.parse(localStorage.getItem('transactions')) || [];
+                transactions[index].operationTime = newTime;
+                localStorage.setItem('transactions', JSON.stringify(transactions));
+                displayTransactions();
+                displayDailyStats();
+                showSaveMessage();
+            } else {
+                input.classList.add('invalid');
+                setTimeout(() => {
+                    input.replaceWith(document.createElement('p'));
+                    displayTransactions();
+                }, 500);
+            }
+        }
+
+        function displayDailyStats() {
+            const dailyStats = document.getElementById('daily-stats');
+            const transactions = JSON.parse(localStorage.getItem('transactions')) || [];
+            dailyStats.innerHTML = '';
+
+            // Calculate date range for last 10 days
+            const today = new Date();
+            const dateRange = [];
+            for (let i = 0; i < 10; i++) {
+                const date = new Date(today);
+                date.setDate(today.getDate() - i);
+                const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+                dateRange.push(dateStr);
+            }
+
+            // Group by date and sum amounts (only Completed)
+            const stats = {};
+            transactions.forEach(transaction => {
+                if (transaction.status === 'Completed') { // Only include Completed transactions
+                    const date = transaction.operationTime.split(' ')[0];
+                    if (dateRange.includes(date)) {
+                        if (!stats[date]) {
+                            stats[date] = { total: 0, currencies: {} };
+                        }
+                        if (!stats[date].currencies[transaction.currency]) {
+                            stats[date].currencies[transaction.currency] = 0;
+                        }
+                        stats[date].currencies[transaction.currency] += transaction.amount;
+                        stats[date].total += transaction.amount;
+                    }
+                }
+            });
+
+            console.log('Daily stats:', stats); // Debug log
+
+            // Display stats for last 10 days
+            dateRange.forEach(date => {
+                if (stats[date]) {
+                    const statDiv = document.createElement('div');
+                    statDiv.className = 'stat';
+                    let currencyDetails = '';
+                    Object.keys(stats[date].currencies).forEach(currency => {
+                        if (stats[date].currencies[currency] > 0) {
+                            currencyDetails += `${currency}: ${stats[date].currencies[currency].toFixed(0)}<br>`;
+                        }
+                    });
+                    statDiv.innerHTML = `
+                        <div class="stat-info">
+                            <p>${translations[lang].date}: ${date}</p>
+                            <p>${translations[lang].totalAmount}: ${stats[date].total.toFixed(0)}</p>
+                            <p>${currencyDetails}</p>
+                        </div>
+                    `;
+                    dailyStats.appendChild(statDiv);
+                }
+            });
+        }
+
+        function deleteTransaction(index) {
+            let transactions = JSON.parse(localStorage.getItem('transactions')) || [];
+            transactions.splice(index, 1);
+            localStorage.setItem('transactions', JSON.stringify(transactions));
+            displayTransactions();
+            displayDailyStats();
+            showSaveMessage();
+        }
+
+        function validateCustomAmount(value) {
+            const t = translations[lang];
+            const amount = parseInt(value);
+            if (!value || isNaN(amount) || amount < 80 || amount > 780 || !Number.isInteger(amount)) {
+                return { valid: false, message: t.errors.amount };
+            }
+            return { valid: true, message: '' };
+        }
+
+        function validateCustomTime(value) {
+            const t = translations[lang];
+            const timeRegex = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/;
+            if (!value || !timeRegex.test(value)) return { valid: false, message: t.errors.time };
+            return { valid: true, message: '' };
+        }
+
+        document.getElementById('add-transaction-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            const amountInput = document.getElementById('custom-amount');
+            const currencyInput = document.getElementById('custom-currency');
+            const timeInput = document.getElementById('custom-time');
+            const statusInput = document.getElementById('custom-status');
+
+            const amountResult = validateCustomAmount(amountInput.value);
+            const timeResult = validateCustomTime(timeInput.value);
+
+            amountInput.classList.toggle('invalid', !amountResult.valid);
+            timeInput.classList.toggle('invalid', !timeResult.valid);
+
+            document.getElementById('custom-amount-error').style.display = amountResult.message ? 'block' : 'none';
+            document.getElementById('custom-amount-error').textContent = amountResult.message;
+            document.getElementById('custom-time-error').style.display = timeResult.message ? 'block' : 'none';
+            document.getElementById('custom-time-error').textContent = timeResult.message;
+
+            if (amountResult.valid && timeResult.valid) {
+                const transactions = JSON.parse(localStorage.getItem('transactions')) || [];
+                transactions.push({
+                    orderNumber: generateOrderNumber(),
+                    amount: parseInt(amountInput.value),
+                    currency: currencyInput.value,
+                    operationTime: timeInput.value,
+                    status: statusInput.value
+                });
+                localStorage.setItem('transactions', JSON.stringify(transactions));
+                displayTransactions();
+                displayDailyStats();
+                showSaveMessage();
+                e.target.reset();
+            }
+        });
+
+        // Generate single transaction
+        document.getElementById('generate-btn').addEventListener('click', () => {
+            console.log('Generate Custom Transaction clicked'); // Debug log
+            try {
+                const transactions = JSON.parse(localStorage.getItem('transactions')) || [];
+                transactions.push(generateRandomTransaction(new Date(), 0));
+                localStorage.setItem('transactions', JSON.stringify(transactions));
+                displayTransactions();
+                displayDailyStats();
+                showSaveMessage();
+            } catch (error) {
+                console.error('Error generating transaction:', error);
+                alert(translations[lang].importError);
+            }
+        });
+
+        // Generate 10 transactions
+        document.getElementById('generate-ten-btn').addEventListener('click', () => {
+            console.log('Generate 10 Transactions clicked'); // Debug log
+            try {
+                const transactions = JSON.parse(localStorage.getItem('transactions')) || [];
+                const baseTime = new Date();
+                for (let i = 0; i < 10; i++) {
+                    transactions.push(generateRandomTransaction(baseTime, i));
+                }
+                localStorage.setItem('transactions', JSON.stringify(transactions));
+                displayTransactions();
+                displayDailyStats();
+                showSaveMessage();
+            } catch (error) {
+                console.error('Error generating 10 transactions:', error);
+                alert(translations[lang].importError);
+            }
+        });
+
+        // Generate 30 transactions
+        document.getElementById('generate-thirty-btn').addEventListener('click', () => {
+            console.log('Generate 30 Transactions clicked'); // Debug log
+            try {
+                const transactions = JSON.parse(localStorage.getItem('transactions')) || [];
+                const baseTime = new Date();
+                for (let i = 0; i < 30; i++) {
+                    transactions.push(generateRandomTransaction(baseTime, i));
+                }
+                localStorage.setItem('transactions', JSON.stringify(transactions));
+                displayTransactions();
+                displayDailyStats();
+                showSaveMessage();
+            } catch (error) {
+                console.error('Error generating 30 transactions:', error);
+                alert(translations[lang].importError);
+            }
+        });
+
+        // Export transactions
+        document.getElementById('export-btn').addEventListener('click', () => {
+            console.log('Export Transactions clicked'); // Debug log
+            try {
+                const transactions = JSON.parse(localStorage.getItem('transactions')) || [];
+                const dataStr = JSON.stringify(transactions, null, 2);
+                const blob = new Blob([dataStr], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `transactions_${formatDateTime(new Date()).replace(/[: ]/g, '-')}.json`;
+                a.click();
+                URL.revokeObjectURL(url);
+                showSaveMessage();
+            } catch (error) {
+                console.error('Error exporting transactions:', error);
+                alert(translations[lang].importError);
+            }
+        });
+
+        // Import transactions
+        document.getElementById('import-btn').addEventListener('click', () => {
+            console.log('Import Transactions clicked'); // Debug log
+            document.getElementById('import-file').click();
+        });
+
+        document.getElementById('import-file').addEventListener('change', (e) => {
+            console.log('Import file selected'); // Debug log
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                try {
+                    const importedData = JSON.parse(event.target.result);
+                    if (Array.isArray(importedData) && importedData.every(item => 
+                        item.orderNumber && typeof item.amount === 'number' && item.currency && item.operationTime && item.status
+                    )) {
+                        localStorage.setItem('transactions', JSON.stringify(importedData));
+                        displayTransactions();
+                        displayDailyStats();
+                        showSaveMessage();
+                    } else {
+                        alert(translations[lang].importError);
+                    }
+                } catch (err) {
+                    alert(translations[lang].importError);
+                    console.error('Error importing transactions:', err);
+                }
+                e.target.value = ''; // Reset file input
+            };
+            reader.readAsText(file);
+        });
+
+        // Initial display
+        console.log('Initializing page'); // Debug log
+        displayTransactions();
+        displayDailyStats();
+    </script>
+</body>
+</html>
